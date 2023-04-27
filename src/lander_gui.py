@@ -6,6 +6,7 @@ import four_axis_math
 import serial_comm
 from dataclasses import dataclass
 import time
+from io import BytesIO
 
 """
 defining all relevant dataclasses to represent the physical components
@@ -39,12 +40,19 @@ background_color = "#001e21"
 foreground_color = "#001e21"
 button_x_padding = 5
 button_y_padding = 5
+image_width = 256
+image_height = 256
 
 """ Root Window """
 root = tkinter.Tk()                                                                             # initialize root window
 root.title("Lander")                                                                            # set window name
 root.attributes('-fullscreen', True)                                                            # set size to fullscreen
 root.configure(background=background_color)
+
+""" Canvas """
+canvas = tkinter.Canvas(root, width=image_width, height=image_height)
+canvas.pack(side=tkinter.TOP, padx=20, pady=50)
+canvas.configure(background=background_color)
 
 """ Button Frame """
 button_frame = tkinter.Frame(root)                                                              # initialize button frame
@@ -120,9 +128,23 @@ def move_lander(x_change:int, y_change:int, z_change:int):
 
 def do_gravity():
     global gravity_const
-    move_lander(0,-(gravity_const),0)
+    model_lander.y_pos = (model_lander.y_pos - gravity_const)
     if(gravity_const < 4):
         gravity_const += 0.1
+
+_canvas_image = None  # Necessary to prevent image from being garbage-collected
+def bytes_to_canvas(image_bytes: bytes):
+    """Pushes the received sequence of bytes to the canvas"""
+    global canvas
+    global _canvas_image
+    # Convert bytes string to PhotoImage
+    image = ImageTk.PhotoImage(Image.open(BytesIO(image_bytes)))
+    _canvas_image = image
+
+    # Clear canvas, push the new image, and tell it to reload
+    canvas.delete('all')
+    canvas.create_image((image_width/2, image_height/2), image=image)  # Note: placement coordinates anchored to center of image
+    canvas.update()
 
 def main():
     """ Launch GUI & Thread Keyboard Reader """
