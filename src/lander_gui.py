@@ -80,20 +80,32 @@ def quit(function_call):
 root.bind("<Escape>", quit)
 
 """ Keyboard Reader Function """
+# this function is being hijacked as the main loop bc idk how to python
 def keyboard_reader():
     while(True):
+        """ ensure the lander is constantly moving down """
         do_gravity()
+
+        """ monitors changes in which keys are down/up """
         event = keyboard.read_event()
         if event.event_type == "down":
-            pressed_keys.add(event.name)
+            pressed_keys.add(event.name)    # if the key is down, add it to the set of pressed keys
         elif event.event_type == "up":
-            if event.name in pressed_keys:
+            if event.name in pressed_keys:  # if the key is up, and in the list of pressed keys, remove it
                 pressed_keys.remove(event.name)
+
+        """ iterate through the currently pressed keys, and perform the according actions """
         for key in pressed_keys:
             # send key inputs only if the key is in the keys array
             if key in register_keys:
                 # TODO: switch statement to call unique functions for each key
                 print(key)
+
+        """ with all changes complete for this iteration, now physically move the lander """
+        # get the list of instructions to send to the stepper motor serial port
+
+        # send the instructions to the stepper motor serial port
+
 
 def move_lander(x_change:int, y_change:int, z_change:int):
     """

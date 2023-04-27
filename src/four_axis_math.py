@@ -4,7 +4,7 @@ def convert_num_steps_to_bytes(num_steps:list)->str:
     # initialize byte string
     byte_str = ""
 
-    # TODO: dont worry about this nic ill do it - it kinda depends on how the motors are physically mounted and how the arduino code works, so it would just be confusing
+    # TODO: dont worry about this nic ill do it - it kinda depends on how the motors are physically mounted, and how the arduino code works, so it would just be confusing
 
     return byte_str
 
@@ -46,7 +46,8 @@ def get_lengths(x:float,y:float,z:float)->list:
 
     return lengths_list
 
-def get_byte_list(x_pos_current:float, y_pos_current:float, z_pos_current:float, x_pos_target:float, y_pos_target:float, z_pos_target:float)->str:
+def get_byte_list(x_pos_current:float, y_pos_current:float, z_pos_current:float,
+                  x_pos_target:float, y_pos_target:float, z_pos_target:float)->str:
     """
     Creates a list of bytes that represent instructions for the stepper motors
     :param x_pos_current: current x position of the lander
