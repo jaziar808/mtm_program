@@ -92,10 +92,10 @@ def get_lengths(x: float, y: float, z: float) -> list:
     # Motor 2 is at <0,72,65>
     # Motor 3 is at <68,72,65>
     # Motor 4 is at <68,72,0>
-    lengths_list[0] = math.sqrt(x ^ 2 + (72 - y) ^ 2 + z ^ 2)
-    lengths_list[1] = math.sqrt(x ^ 2 + (72 - y) ^ 2 + (65 - z) ^ 2)
-    lengths_list[2] = math.sqrt((72 - x) ^ 2 + (72 - y) ^ 2 + (72 - z) ^ 2)
-    lengths_list[3] = math.sqrt((72 - x) ^ 2 + (72 - y) ^ 2 +   z ^ 2)
+    lengths_list[0] = math.sqrt(x ** 2 + (72 - y) ** 2 + z ** 2)
+    lengths_list[1] = math.sqrt(x ** 2 + (72 - y) ** 2 + (65 - z) ** 2)
+    lengths_list[2] = math.sqrt((72 - x) ** 2 + (72 - y) ** 2 + (72 - z) ** 2)
+    lengths_list[3] = math.sqrt((72 - x) ** 2 + (72 - y) ** 2 +   z ** 2)
 
     return lengths_list
 
@@ -131,5 +131,5 @@ def get_byte_list(x_pos_current: float, y_pos_current: float, z_pos_current: flo
 
     # create a string representing the instructions as a sequence of bytes
     byte_list = convert_num_steps_to_bytes(num_steps)
-    # TODO: returns empty at the moment
+
     return byte_list
