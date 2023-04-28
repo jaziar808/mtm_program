@@ -1,10 +1,40 @@
 import math
 
+# defined bytes to step the motors
+STEP_ARR = [b'\x31',b'\x32',b'\x33',b'\x34']
+
+# defined bytes to set motors' directions - index 0 is motor 1, etc.
+DIR_EXTEND_ARR = [b'\x41',b'\x42',b'\x43',b'\x44']
+DIR_RETRACT_ARR = [b'\x61',b'\x62',b'\x63',b'\x64']
+
 def convert_num_steps_to_bytes(num_steps: list) -> bytes:
     # initialize byte string
     byte_str = b''
 
-    # TODO: create byte string from the list of steps
+    # first four bytes should specify the direction for each of the four motors
+    for i in range(4):
+        if num_steps[i] < 0:
+            byte_str += DIR_RETRACT_ARR[i]
+            num_steps[i] = (num_steps[i] * -1)  # ensures that all values in num_steps are positive after this loop
+        elif num_steps[i] > 0:
+            byte_str += DIR_EXTEND_ARR[i]
+
+    """ now insert the step bytes for each motor into the byte_str - previous loop made all values positive
+        currently inserts instructions by adding instructions for the motors with the most steps first """
+    # store the total number of instructions to write
+    tot_instr = num_steps[0] + num_steps[1] + num_steps[2] + num_steps[3]
+
+    # iterate for the number of total instructions
+    for i in range(tot_instr):
+        # determine the highest number of steps
+        target = max(num_steps[0],num_steps[1],num_steps[2],num_steps[3])
+
+        # find the part of the array with that highest number
+        for k in range(4):
+            if num_steps[k] == target:
+                num_steps[k] = (num_steps[k] - 1)   # decrease the value in the array
+                byte_str += STEP_ARR[k]             # add the command to the byte string
+                break
 
     return byte_str
 
@@ -25,11 +55,16 @@ def distance_to_num_steps(distances:list) -> list:
     # angle = (180 s)/(pi r)
     # r = 0.19
     # 1 step = .9 degrees
-    # steps = (162 s)/(pi r)
-    steps_list[0] = (200 * distances[0]) / (math.pi * 0.19) (int)
-    steps_list[1] = (200 * distances[1]) / (math.pi * 0.19) (int)
-    steps_list[2] = (200 * distances[2]) / (math.pi * 0.19) (int)
-    steps_list[3] = (200 * distances[3]) / (math.pi * 0.19) (int)
+    # steps = (200 s)/(pi r)
+    steps_list[0] = ((200 * distances[0]) / (math.pi * 0.19)) (int)
+    steps_list[1] = ((200 * distances[1]) / (math.pi * 0.19)) (int)
+    steps_list[2] = ((200 * distances[2]) / (math.pi * 0.19)) (int)
+    steps_list[3] = ((200 * distances[3]) / (math.pi * 0.19)) (int)
+
+    # MULTIPLY ALL VALUES BY TWO - THIS ACCOUNTS FOR THE FACT THAT THE STRINGS ARE NOW MOUNTED AS "PULLEYS"
+    # THIS SHOULD BE REMOVED ONLY IF THE STRINGS ARE DIRECTLY PULLING THE LANDER
+    for i in range(4):
+        steps_list[i] = (steps_list[i] * 2)
 
     return steps_list
 
