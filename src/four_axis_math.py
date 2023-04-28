@@ -46,7 +46,7 @@ def distance_to_num_steps(distances:list) -> list:
     :return: degrees of rotation necessary to change length by the desired distance
     """
     # initialize a list
-    steps_list = []
+    steps_list = [0,0,0,0]
 
     # index 0 should be the number of steps for motor 1, index 1 should be the number of steps for motor 2, etc.
 
@@ -56,10 +56,10 @@ def distance_to_num_steps(distances:list) -> list:
     # r = 0.19
     # 1 step = .9 degrees
     # steps = (200 s)/(pi r)
-    steps_list[0] = ((200 * distances[0]) / (math.pi * 0.19)) (int)
-    steps_list[1] = ((200 * distances[1]) / (math.pi * 0.19)) (int)
-    steps_list[2] = ((200 * distances[2]) / (math.pi * 0.19)) (int)
-    steps_list[3] = ((200 * distances[3]) / (math.pi * 0.19)) (int)
+    steps_list[0] = int((200 * distances[0]) / (math.pi * 0.19))
+    steps_list[1] = int((200 * distances[1]) / (math.pi * 0.19))
+    steps_list[2] = int((200 * distances[2]) / (math.pi * 0.19))
+    steps_list[3] = int((200 * distances[3]) / (math.pi * 0.19))
 
     # MULTIPLY ALL VALUES BY TWO - THIS ACCOUNTS FOR THE FACT THAT THE STRINGS ARE NOW MOUNTED AS "PULLEYS"
     # THIS SHOULD BE REMOVED ONLY IF THE STRINGS ARE DIRECTLY PULLING THE LANDER
@@ -78,7 +78,7 @@ def get_lengths(x: float, y: float, z: float) -> list:
     :return: list of length 4, with the lengths of the four strings
     """
     # initialize a list
-    lengths_list = []
+    lengths_list = [0,0,0,0]
 
     # TODO: populate the list with the length of all four strings (motor 1 at index 0, motor 2 at index 1, etc.)
     # NOTE: motor 1 is at the intersection of the x, y, and z axes, flush with the floor
@@ -120,7 +120,7 @@ def get_byte_list(x_pos_current: float, y_pos_current: float, z_pos_current: flo
     target_lengths = get_lengths(x_pos_target, y_pos_target, z_pos_target)
 
     # calculate the difference in length for each one
-    length_differences = []
+    length_differences = [0,0,0,0]
     length_differences[0] = target_lengths[0] - current_lengths[0]
     length_differences[1] = target_lengths[1] - current_lengths[1]
     length_differences[2] = target_lengths[2] - current_lengths[2]
