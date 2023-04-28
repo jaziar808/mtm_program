@@ -33,7 +33,7 @@ stepper_arduino = ArduinoNano("COM3")
 
 # create the lander control arduino and a lander to put it in
 lander_arduino = ArduinoNano("COM5")
-model_lander = Lander(36, 0, 36, lander_arduino)
+model_lander = Lander(34, 4.5, 32.5, lander_arduino)
 
 """ Globals """
 background_color = "#001e21"
@@ -91,6 +91,11 @@ root.bind("<Escape>", quit)
 # this function is being hijacked as the main loop bc idk how to python
 def keyboard_reader():
     while(True):
+        """ store the initial position of the lander """
+        x_current = model_lander.x_pos
+        y_current = model_lander.y_pos
+        z_current = model_lander.z_pos
+
         """ ensure the lander is constantly moving down """
         do_gravity()
 
@@ -110,26 +115,42 @@ def keyboard_reader():
                 print(key)
 
         """ with all changes complete for this iteration, now physically move the lander """
-        # get the list of instructions to send to the stepper motor serial port
+        # current pos is the values that were stored at the beginning of the loop
+        # target pos is the values of the fields in the model_lander dataclass, which (may) have been changed
+        move_lander(x_current, y_current, z_current, model_lander.x_pos, model_lander.y_pos, model_lander.z_pos)
 
-        # send the instructions to the stepper motor serial port
-
-
-def move_lander(x_change:int, y_change:int, z_change:int):
+def move_lander(x_current:float, y_current:float, z_current:float,
+                x_target:float, y_target:float, z_target:float):
     """
-    Moves the lander to the new position, as a result of user input
-    :param x_change: change in x coordinate
-    :param y_change: change in y coordinate
-    :param z_change: change in z coordinate
+    Generates instructions and sends them to the arduino to physically move the lander
+    :param x_current: the current x position of the lander
+    :param y_current: the current y position of the lander
+    :param z_current: the current z position of the lander
+    :param x_target: the target x position of the lander
+    :param y_target: the target y position of the lander
+    :param z_target: the target z position of the lander
     :return: none
     """
-    # TODO
+
+    # get the byte list using the function in four_axis_math.py
+    byte_list = get_byte_list(x_current, y_current, z_current, x_target, y_target, z_target)
+
+    # send the instructions to the serial port, using the method that is defined in serial_comm.py
+    write_to_port(byte_list)
     return
+
 
 def do_gravity():
     global gravity_const
+    # move the lander down
     model_lander.y_pos = (model_lander.y_pos - gravity_const)
-    if(gravity_const < 4):
+
+    # check to make sure the lander height is valid
+    if(model_lander.y_pos < 4.5):
+        model_lander.y_pos = 4.5
+
+    # increase the gravity const
+    if(gravity_const < 0.5):
         gravity_const += 0.1
 
 _canvas_image = None  # Necessary to prevent image from being garbage-collected
@@ -149,7 +170,6 @@ def bytes_to_canvas(image_bytes: bytes):
 def main():
     """ Launch GUI & Thread Keyboard Reader """
     threading.Thread(target=keyboard_reader, daemon=True).start()
-    threading.Thread(target=do_gravity, daemon=True).start()
     root.mainloop()
 
 if __name__ == '__main__':
