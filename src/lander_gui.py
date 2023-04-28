@@ -111,8 +111,43 @@ def keyboard_reader():
         for key in pressed_keys:
             # send key inputs only if the key is in the keys array
             if key in register_keys:
-                # TODO: switch statement to call unique functions for each key
+                if key == "q":
+                    pass
+                if key == "w":
+                    model_lander.x_pos = (model_lander.x_pos + 0.1)
+                if key == "a":
+                    model_lander.z_pos = (model_lander.z_pos - 0.1)
+                if key == "s":
+                    model_lander.x_pos = (model_lander.x_pos - 0.1)
+                if key == "d":
+                    model_lander.z_pos = (model_lander.z_pos + 0.1)
+                if key == "space":
+                    model_lander.y_pos = (model_lander.y_pos + 0.1)
+                    global gravity_const
+                    gravity_const = gravity_const - 0.2
+                if key == "left":
+                    pass
+                if key == "right":
+                    pass
+                if key == "up":
+                    pass
+                if key == "down":
+                    pass
                 print(key)
+
+                # check to ensure that all coordinates are valid and not too close to the ground/edges
+                if model_lander.x_pos > 62:
+                    model_lander.x_pos = 62
+                if model_lander.x_pos < 6:
+                    model_lander.x_pos = 6
+                if model_lander.z_pos > 59:
+                    model_lander.z_pos = 59
+                if model_lander.z_pos < 6:
+                    model_lander.z_pos = 6
+                if model_lander.y_pos < 4:
+                    model_lander.y_pos = 4
+                if model_lander.y_pos > 36:
+                    model_lander.y_pos = 36
 
         """ with all changes complete for this iteration, now physically move the lander """
         # current pos is the values that were stored at the beginning of the loop
@@ -138,7 +173,6 @@ def move_lander(x_current:float, y_current:float, z_current:float,
     # send the instructions to the serial port, using the method that is defined in serial_comm.py
     write_to_port(byte_list)
     return
-
 
 def do_gravity():
     global gravity_const
