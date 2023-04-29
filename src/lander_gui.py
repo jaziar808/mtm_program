@@ -2,11 +2,12 @@ import tkinter
 from PIL import Image, ImageTk
 import keyboard
 import threading
-import four_axis_math
-import serial_comm
+from four_axis_math import *
+from serial_comm import get_image, is_in_danger, write_to_stepper
 from dataclasses import dataclass
 import time
 from io import BytesIO
+from time import sleep
 
 """
 defining all relevant dataclasses to represent the physical components
@@ -40,8 +41,8 @@ background_color = "#001e21"
 foreground_color = "#001e21"
 button_x_padding = 5
 button_y_padding = 5
-image_width = 256
-image_height = 256
+image_width = 120*4
+image_height = 120*4
 
 """ Root Window """
 root = tkinter.Tk()                                                                             # initialize root window
@@ -49,14 +50,19 @@ root.title("Lander")                                                            
 root.attributes('-fullscreen', True)                                                            # set size to fullscreen
 root.configure(background=background_color)
 
+""" Title """
+title_label = tkinter.Label(root, width=50, height=1, font=('Consolas', 32), text='Mission Control')
+title_label.pack(side=tkinter.TOP)
+title_label.configure(background=background_color, foreground='white')
+
 """ Canvas """
 canvas = tkinter.Canvas(root, width=image_width, height=image_height)
-canvas.pack(side=tkinter.TOP, padx=20, pady=50)
+canvas.pack(side=tkinter.TOP, padx=20, pady=0)
 canvas.configure(background=background_color)
 
 """ Button Frame """
 button_frame = tkinter.Frame(root)                                                              # initialize button frame
-button_frame.pack(side=tkinter.BOTTOM, padx=20, pady=50)
+button_frame.pack(side=tkinter.BOTTOM, padx=20, pady=8)
 button_frame.configure(background=background_color)
 
 """ Button Configure """
@@ -154,6 +160,9 @@ def keyboard_reader():
         # target pos is the values of the fields in the model_lander dataclass, which (may) have been changed
         move_lander(x_current, y_current, z_current, model_lander.x_pos, model_lander.y_pos, model_lander.z_pos)
 
+        # Pause thread
+        sleep(0)
+
 def move_lander(x_current:float, y_current:float, z_current:float,
                 x_target:float, y_target:float, z_target:float):
     """
@@ -171,7 +180,7 @@ def move_lander(x_current:float, y_current:float, z_current:float,
     byte_list = get_byte_list(x_current, y_current, z_current, x_target, y_target, z_target)
 
     # send the instructions to the serial port, using the method that is defined in serial_comm.py
-    write_to_port(byte_list)
+    write_to_stepper(byte_list)
     return
 
 def do_gravity():
@@ -193,7 +202,14 @@ def bytes_to_canvas(image_bytes: bytes):
     global canvas
     global _canvas_image
     # Convert bytes string to PhotoImage
-    image = ImageTk.PhotoImage(Image.open(BytesIO(image_bytes)))
+    img = Image.open(BytesIO(image_bytes))
+    img = img.rotate(90)
+    # Resize image to fit canvas
+    scale_factor = image_height/ img.height
+    img = img.resize((int(img.width*scale_factor), int(img.height*scale_factor)))
+
+    # Convert image to tkinter-compatible PhotoImage and save to global scope
+    image = ImageTk.PhotoImage(img)
     _canvas_image = image
 
     # Clear canvas, push the new image, and tell it to reload
@@ -201,9 +217,24 @@ def bytes_to_canvas(image_bytes: bytes):
     canvas.create_image((image_width/2, image_height/2), image=image)  # Note: placement coordinates anchored to center of image
     canvas.update()
 
+def lander_thread_function():
+    """Lander thread stuff"""
+    while True:
+        # Grab image data and push to canvas
+        print('check')
+        image = get_image()
+        print('Got:', len(image))
+        bytes_to_canvas(image)
+
+        # Grab danger status
+        danger = is_in_danger()
+        if danger:
+            print("STOOOOOOOOOOP")
+
 def main():
     """ Launch GUI & Thread Keyboard Reader """
-    threading.Thread(target=keyboard_reader, daemon=True).start()
+    thd1 = threading.Thread(target=keyboard_reader, daemon=True).start()
+    thd2 = threading.Thread(target=lander_thread_function, daemon=True).start()
     root.mainloop()
 
 if __name__ == '__main__':
