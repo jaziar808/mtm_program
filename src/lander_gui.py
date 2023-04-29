@@ -155,6 +155,10 @@ def keyboard_reader():
                 if model_lander.y_pos > 36:
                     model_lander.y_pos = 36
 
+                # check to make sure gravity isn't negative
+                if gravity_const < 0:
+                    gravity_const = 0
+
         """ with all changes complete for this iteration, now physically move the lander """
         # current pos is the values that were stored at the beginning of the loop
         # target pos is the values of the fields in the model_lander dataclass, which (may) have been changed
