@@ -84,5 +84,5 @@ def is_in_danger() -> bool:
     return bool(msg[0])
 
 
-def move_steppers(instructions:bytes):
+def write_to_stepper(instructions:bytes):
     stepper.write(bytes([instructions]))
