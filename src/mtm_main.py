@@ -8,7 +8,7 @@ def main():
     # start GUI thread
     # start lander thread
     # start stepper thread
-    print('Main program finished')
+    print('Main function finished')
 
 if __name__ == '__main__':
     main()

@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import keyboard
 import threading
 from four_axis_math import *
-from s_comm import get_image, get_distance, write_to_stepper
+from stepper_serial import get_image, get_distance, write_to_stepper
 from dataclasses import dataclass
 import time
 from io import BytesIO
