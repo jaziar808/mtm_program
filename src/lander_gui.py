@@ -3,38 +3,13 @@ from PIL import Image, ImageTk
 import keyboard
 import threading
 from four_axis_math import *
-from serial_comm import get_image, is_in_danger, write_to_stepper
+from s_comm import get_image, get_distance, write_to_stepper
 from dataclasses import dataclass
 import time
 from io import BytesIO
 from time import sleep
 
-"""
-defining all relevant dataclasses to represent the physical components
-"""
-# define a dataclass for the arduinos
-@dataclass(frozen=True)
-class ArduinoNano:
-    port:str            # name of the COM port the arduino is connected to
-
-# define a dataclass for the lander
-@dataclass
-class Lander:
-    x_pos:float   # horizontal (90 deg counter-clockwise of z when looking from above)
-    y_pos:float   # vertical (up is positive)
-    z_pos:float   # horizontal (90 deg clockwise of x when looking from above)
-    arduino:ArduinoNano
-
-""" keep track of gravity """
-gravity_const = 0
-
-""" Instantiating the dataclasses """
-# create the stepper control arduino
-stepper_arduino = ArduinoNano("COM3")
-
-# create the lander control arduino and a lander to put it in
-lander_arduino = ArduinoNano("COM5")
-model_lander = Lander(34, 4.5, 32.5, lander_arduino)
+sensor_distance = 0
 
 """ Globals """
 background_color = "#001e21"
@@ -59,6 +34,10 @@ title_label.configure(background=background_color, foreground='white')
 canvas = tkinter.Canvas(root, width=image_width, height=image_height)
 canvas.pack(side=tkinter.TOP, padx=20, pady=0)
 canvas.configure(background=background_color)
+
+""" Distance display """
+distance_label = tkinter.Label(root, font=('Consolas', 20), text=sensor_distance)
+distance_label.pack(side=tkinter.TOP)
 
 """ Button Frame """
 button_frame = tkinter.Frame(root)                                                              # initialize button frame
@@ -96,14 +75,12 @@ root.bind("<Escape>", quit)
 """ Keyboard Reader Function """
 # this function is being hijacked as the main loop bc idk how to python
 def keyboard_reader():
-    while(True):
-        """ store the initial position of the lander """
-        x_current = model_lander.x_pos
-        y_current = model_lander.y_pos
-        z_current = model_lander.z_pos
+    grav_on = False
 
+    while(True):
         """ ensure the lander is constantly moving down """
-        do_gravity()
+        if grav_on:
+            do_gravity()
 
         """ monitors changes in which keys are down/up """
         event = keyboard.read_event()
@@ -118,87 +95,42 @@ def keyboard_reader():
             # send key inputs only if the key is in the keys array
             if key in register_keys:
                 if key == "q":
-                    pass
+                    write_to_stepper(b'\x31\x32\x33\x34')
                 if key == "w":
-                    model_lander.x_pos = (model_lander.x_pos + 0.1)
+                    write_to_stepper(b'\x32\x33')
                 if key == "a":
-                    model_lander.z_pos = (model_lander.z_pos - 0.1)
+                    write_to_stepper(b'\x33\x34')
                 if key == "s":
-                    model_lander.x_pos = (model_lander.x_pos - 0.1)
+                    write_to_stepper(b'\x31\x34')
                 if key == "d":
-                    model_lander.z_pos = (model_lander.z_pos + 0.1)
+                    write_to_stepper(b'\x31\x32')
                 if key == "space":
-                    model_lander.y_pos = (model_lander.y_pos + 0.1)
-                    global gravity_const
-                    gravity_const = gravity_const - 0.2
-                if key == "left":
-                    pass
-                if key == "right":
-                    pass
+                    write_to_stepper(b'\x61\x62\x43\x64\x35')
                 if key == "up":
-                    pass
+                    write_to_stepper(b'\x33')
+                if key == "right":
+                    write_to_stepper(b'\x32')
                 if key == "down":
-                    pass
+                    write_to_stepper(b'\x31')
+                if key == "left":
+                    write_to_stepper(b'\x34')
                 print(key)
-
-                # check to ensure that all coordinates are valid and not too close to the ground/edges
-                if model_lander.x_pos > 62:
-                    model_lander.x_pos = 62
-                if model_lander.x_pos < 6:
-                    model_lander.x_pos = 6
-                if model_lander.z_pos > 59:
-                    model_lander.z_pos = 59
-                if model_lander.z_pos < 6:
-                    model_lander.z_pos = 6
-                if model_lander.y_pos < 4:
-                    model_lander.y_pos = 4
-                if model_lander.y_pos > 36:
-                    model_lander.y_pos = 36
-
-                # check to make sure gravity isn't negative
-                if gravity_const < 0:
-                    gravity_const = 0
-
-        """ with all changes complete for this iteration, now physically move the lander """
-        # current pos is the values that were stored at the beginning of the loop
-        # target pos is the values of the fields in the model_lander dataclass, which (may) have been changed
-        move_lander(x_current, y_current, z_current, model_lander.x_pos, model_lander.y_pos, model_lander.z_pos)
 
         # Pause thread
         sleep(0)
 
-def move_lander(x_current:float, y_current:float, z_current:float,
-                x_target:float, y_target:float, z_target:float):
-    """
-    Generates instructions and sends them to the arduino to physically move the lander
-    :param x_current: the current x position of the lander
-    :param y_current: the current y position of the lander
-    :param z_current: the current z position of the lander
-    :param x_target: the target x position of the lander
-    :param y_target: the target y position of the lander
-    :param z_target: the target z position of the lander
-    :return: none
-    """
-
-    # get the byte list using the function in four_axis_math.py
-    byte_list = get_byte_list(x_current, y_current, z_current, x_target, y_target, z_target)
-
-    # send the instructions to the serial port, using the method that is defined in serial_comm.py
-    write_to_stepper(byte_list)
-    return
-
 def do_gravity():
     global gravity_const
     # move the lander down
-    model_lander.y_pos = (model_lander.y_pos - gravity_const)
+    # write_to_stepper(b'\x41\x42\x43\x44\x31\x32\x33\x34')
 
     # check to make sure the lander height is valid
-    if(model_lander.y_pos < 4.5):
-        model_lander.y_pos = 4.5
+    #if(model_lander.y_pos < 4.5):
+    #    model_lander.y_pos = 4.5
 
     # increase the gravity const
-    if(gravity_const < 0.5):
-        gravity_const += 0.1
+    #if(gravity_const < 2):
+    #    gravity_const += 0.1
 
 _canvas_image = None  # Necessary to prevent image from being garbage-collected
 def bytes_to_canvas(image_bytes: bytes):
@@ -225,15 +157,11 @@ def lander_thread_function():
     """Lander thread stuff"""
     while True:
         # Grab image data and push to canvas
-        print('check')
         image = get_image()
-        print('Got:', len(image))
         bytes_to_canvas(image)
 
         # Grab danger status
-        danger = is_in_danger()
-        if danger:
-            print("STOOOOOOOOOOP")
+        sensor_distance = get_distance()
 
 def main():
     """ Launch GUI & Thread Keyboard Reader """

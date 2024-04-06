@@ -3,25 +3,26 @@ import serial
 import serial.tools.list_ports
 from time import sleep
 
-# Constants
-LANDER_PORT = 'COM5'
-STEPPER_PORT = 'COM3'
+STEPPER_PORT = 'COM5'
+LANDER_PORT = 'COM3'
 
 # Print out existing ports for reference
 available = [i.device for i in list(serial.tools.list_ports.comports())]
-print(f'Existing ports: {", ".join(available)}')
-
+print(f'Available ports: {", ".join(available)}')
+'''
 try:
     lander = serial.Serial(LANDER_PORT, 115200, timeout=0.1)
-except:
+except Exception as err:
     lander = None
     print('Failed to connect to lander!')
+    print(err)
 try:
     stepper = serial.Serial(STEPPER_PORT, 115200, timeout=0.1)
-except:
+except Exception as err:
     print('Failed to connect to stepper!')
+    print(err)
 
-sleep(4)
+sleep(4)'''
 
 
 def get_image() -> bytes:
@@ -56,12 +57,12 @@ def get_image() -> bytes:
     return msg
 
 
-def is_in_danger() -> bool:
+def get_distance() -> int:
     """
     Ask the lander if we're too close to the ground
     """
     # Send the command
-    lander.write(bytes([0x55]))
+    lander.write(bytes([0x73]))
 
     # Read results
     reading = True
@@ -81,8 +82,8 @@ def is_in_danger() -> bool:
         sleep(0)
 
     # Return message status
-    return bool(msg[0])
+    return int(msg)
 
 
 def write_to_stepper(instructions:bytes):
-    stepper.write(bytes([instructions]))
+    stepper.write(instructions)
